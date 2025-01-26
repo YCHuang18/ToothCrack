@@ -103,10 +103,10 @@ class MaskRCNN(FasterRCNN):
             image_std=None,
             rpn_anchor_generator=None,
             rpn_head=None,
-            rpn_pre_nms_top_n_train=2000,
-            rpn_pre_nms_top_n_test=1000,
-            rpn_post_nms_top_n_train=2000,
-            rpn_post_nms_top_n_test=1000,
+            rpn_pre_nms_top_n_train=1000,
+            rpn_pre_nms_top_n_test=500,
+            rpn_post_nms_top_n_train=1000,
+            rpn_post_nms_top_n_test=500,
             rpn_nms_thresh=0.7,
             rpn_fg_iou_thresh=0.7,
             rpn_bg_iou_thresh=0.3,
@@ -191,7 +191,8 @@ class Downdysconv(nn.Module):
     def __init__(self, in_channels, out_channels, dilation):
         super().__init__()
         self.down_conv = nn.Sequential(
-            DySnackConv(in_channels, out_channels, 9),
+            #DySnackConv(in_channels, out_channels, 9),
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=1, padding=dilation, dilation=dilation),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True)
         )
