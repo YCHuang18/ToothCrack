@@ -69,11 +69,11 @@ class DSConv(nn.Module):
         )
 
         # self.gn = nn.GroupNorm(out_ch // 4, out_ch)
-        self.act = nn.SiLU() if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
+        # self.act = nn.SiLU() if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
 
-        self.extend_scope = extend_scope
-        self.morph = morph
-        self.if_offset = if_offset
+        # self.extend_scope = extend_scope
+        # self.morph = morph
+        # self.if_offset = if_offset
 
     def forward(self, f):
         offset = self.offset_conv(f)
