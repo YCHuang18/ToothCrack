@@ -10,8 +10,6 @@ from . import boxes as box_ops
 
 
 def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):
-    # type: (Tensor, Tensor, List[Tensor], List[Tensor]) -> Tuple[Tensor, Tensor]
-
     labels = torch.cat(labels, dim=0)
     regression_targets = torch.cat(regression_targets, dim=0)
 
@@ -34,22 +32,6 @@ def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):
     return classification_loss, box_loss
 
 def maskrcnn_inference(x, labels):
-    # type: (Tuple[Tensor, Tensor, Tensor, Tensor, Tensor], List[Tensor]) -> List[Tensor]
-    """
-    From the results of the CNN, post process the masks
-    by taking the mask corresponding to the class with max
-    probability (which are of fixed size and directly output
-    by the CNN) and return the masks in the mask field of the BoxList.
-
-    Args:
-        x (Tensor): the mask logits
-        labels (list[BoxList]): bounding boxes that are used as
-            reference, one for ech image
-
-    Returns:
-        results (list[BoxList]): one BoxList for each image, containing
-            the extra field mask
-    """
     mask_prob = x[0].sigmoid()
     num_masks = x[0].shape[0]
     boxes_per_image = [label.shape[0] for label in labels]
@@ -62,14 +44,6 @@ def maskrcnn_inference(x, labels):
 
 
 def project_masks_on_boxes(gt_masks, boxes, matched_idxs, M):
-    # type: (Tensor, Tensor, Tensor, int) -> Tensor
-    """
-    Given segmentation masks and the bounding boxes corresponding
-    to the location of the masks in the image, this function
-    crops and resizes the masks in the position defined by the
-    boxes. This prepares the masks for them to be fed to the
-    loss computation as the targets.
-    """
     matched_idxs = matched_idxs.to(boxes)
     rois = torch.cat([matched_idxs[:, None], boxes], dim=1)
     gt_masks = gt_masks[:, None].to(rois)
@@ -77,7 +51,7 @@ def project_masks_on_boxes(gt_masks, boxes, matched_idxs, M):
 
 
 def maskrcnn_loss(mask_logits, proposals, gt_masks, gt_labels, mask_matched_idxs):
-    weights = [0.5, 0.2, 0.15, 0.1, 0.05]
+    # weights = [0.5, 0.2, 0.15, 0.1, 0.05]
     discretization_sizes = [logit.shape[-1] for logit in mask_logits]
     labels = [gt_label[idxs] for gt_label, idxs in zip(gt_labels, mask_matched_idxs)]
     mask_targets = [[project_masks_on_boxes(m, p, i, size) for m, p, i in zip(gt_masks, proposals, mask_matched_idxs)]
@@ -91,7 +65,7 @@ def maskrcnn_loss(mask_logits, proposals, gt_masks, gt_labels, mask_matched_idxs
     total_gradient = sum([sum(torch.norm(g) for g in grad if g is not None) for grad in gradients])
     if total_gradient > 0:
         for i, grad in enumerate(gradients):
-            weights[i] -= 0.01 * sum(torch.norm(g) for g in grad if g is not None)
+            weights[i] -= sum(torch.norm(g) for g in grad if g is not None)
     weight_sum = sum(weights)
     weights = [w / weight_sum for w in weights]
     mask_loss = sum(weight * loss for weight, loss in zip(weights, mask_losses))
